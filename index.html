@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自動販売機検索</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+  <header>
+    <button id="menu">&#9776;</button>
+    <h1>自動販売機検索</h1>
+    <button id="locateMe">📍現在地</button>
+  </header>
+
+  <!-- サイドメニュー -->
+  <nav id="sidebar" class="hidden">
+    <button id="closeSidebar">×</button>
+    <h2>検索項目</h2>
+    <ul>
+      <li><button class="search-option" data-value="type">自動販売機の種類</button></li>
+      <li><button class="search-option" data-value="nearby">近くの自動販売機</button></li>
+      <li><button class="search-option" data-value="cashless">電子マネー対応</button></li>
+      <li><button class="search-option" data-value="drinks">飲み物の種類</button></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div id="map"></div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
