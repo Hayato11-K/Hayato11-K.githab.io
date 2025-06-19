@@ -93,8 +93,7 @@
     <button id="closeSidebar">×</button>
     <h2>検索オプション</h2>
     <input type="text" id="searchInput" placeholder="自販機名や地域で検索" />
-    $1
-    <button id="resetBtn">すべて表示</button>
+    <button id="searchBtn">検索</button>
     <hr>
     <button class="search-option" data-filter="cashless" data-value="true">電子マネー対応</button>
     <button class="search-option" data-filter="cashless" data-value="false">電子マネー非対応</button>
@@ -189,16 +188,10 @@
       document.getElementById('sidebar').classList.remove('show');
     });
 
-    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    document.getElementById('searchInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         document.getElementById('searchBtn').click();
       }
-    });
-
-    // すべて表示ボタンの処理
-    document.getElementById('resetBtn').addEventListener('click', function () {
-      renderMarkers(vendingMachines);
-      document.getElementById('sidebar').classList.remove('show');
     });
   </script>
 </body>
