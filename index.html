@@ -14,11 +14,9 @@
       height: 100vh;
       width: 100%;
     }
-
-    /* ハンバーガーアイコン */
     #menu {
       position: absolute;
-      top: 15px;
+      top: 60px;
       left: 15px;
       z-index: 1000;
       background: #fff;
@@ -29,8 +27,18 @@
       font-size: 24px;
       line-height: 1;
     }
-
-    /* サイドバー */
+    #locateMe {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 1000;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
     #sidebar {
       position: absolute;
       top: 0;
@@ -53,9 +61,7 @@
       font-size: 18px;
       cursor: pointer;
     }
-
-    /* 検索UI */
-    input, select {
+    input {
       width: 100%;
       padding: 6px;
       margin: 6px 0;
@@ -77,38 +83,17 @@
       border: none;
       cursor: pointer;
     }
-
-    /* 現在地ボタン */
-    #locateMe {
-  position: absolute;
-  top: 15px;
-  right: 15px; /* ← ここを left → right に変更 */
-  z-index: 1000;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-}
   </style>
 </head>
 <body>
-
-  <!-- 三本バー -->
   <button id="menu">☰</button>
-
-  <!-- 現在地ボタン -->
   <button id="locateMe">📍 現在地</button>
 
-  <!-- サイドバー -->
   <div id="sidebar">
     <button id="closeSidebar">×</button>
     <h2>検索オプション</h2>
-
     <input type="text" id="searchInput" placeholder="自販機名や地域で検索" />
     <button id="searchBtn">検索</button>
-
     <hr>
     <button class="search-option" data-filter="cashless" data-value="true">電子マネー対応</button>
     <button class="search-option" data-filter="cashless" data-value="false">電子マネー非対応</button>
@@ -116,11 +101,98 @@
     <button class="search-option" data-filter="type" data-value="スナック">スナック自販機</button>
   </div>
 
-  <!-- 地図 -->
   <div id="map"></div>
 
-  <!-- スクリプト -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script>
+    const map = L.map('map', { zoomControl: false }).setView([35.681236, 139.767125], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const vendingMachines = [
+      { lat: 35.681236, lng: 139.767125, name: "東京駅前", type: "飲料", cashless: true },
+      { lat: 35.6895, lng: 139.6917, name: "新宿駅", type: "スナック", cashless: false },
+      { lat: 35.710063, lng: 139.8107, name: "浅草寺前", type: "飲料", cashless: true },
+      { lat: 35.7013, lng: 139.9826, name: "船橋駅", type: "飲料", cashless: false },
+      { lat: 35.6146, lng: 140.1063, name: "千葉駅", type: "スナック", cashless: true },
+    ];
+
+    let markers = [];
+
+    function renderMarkers(filteredList = vendingMachines) {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+      filteredList.forEach(vm => {
+        const marker = L.marker([vm.lat, vm.lng])
+          .addTo(map)
+          .bindPopup(`<b>${vm.name}</b><br>種類: ${vm.type}<br>電子マネー: ${vm.cashless ? "対応" : "非対応"}`);
+        markers.push(marker);
+      });
+    }
+
+    renderMarkers();
+
+    document.getElementById('locateMe').addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 15);
+          L.marker([lat, lng]).addTo(map).bindPopup("現在地").openPopup();
+        }, () => {
+          alert("現在地の取得に失敗しました");
+        });
+      } else {
+        alert("このブラウザでは現在地取得がサポートされていません");
+      }
+    });
+
+    document.getElementById('menu').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('show');
+    });
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('show');
+    });
+
+    document.querySelectorAll('.search-option').forEach(button => {
+      button.addEventListener('click', () => {
+        const filterType = button.dataset.filter;
+        const filterValue = button.dataset.value;
+        let filtered = vendingMachines;
+
+        if (filterType === "cashless") {
+          filtered = vendingMachines.filter(vm => vm.cashless === (filterValue === "true"));
+        } else if (filterType === "type") {
+          filtered = vendingMachines.filter(vm => vm.type === filterValue);
+        }
+
+        renderMarkers(filtered);
+        document.getElementById('sidebar').classList.remove('show');
+      });
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', function () {
+      const keyword = document.getElementById('searchInput').value.trim();
+      let filtered = vendingMachines;
+
+      if (keyword) {
+        filtered = vendingMachines.filter(vm =>
+          vm.name.includes(keyword) ||
+          vm.type.includes(keyword)
+        );
+      }
+
+      renderMarkers(filtered);
+      document.getElementById('sidebar').classList.remove('show');
+    });
+
+    document.getElementById('searchInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        document.getElementById('searchBtn').click();
+      }
+    });
+  </script>
 </body>
 </html>
