@@ -15,7 +15,9 @@ const vendingMachines = [
   { lat: 35.681236, lng: 139.767125, name: "東京駅前", type: "飲料", cashless: true },
   { lat: 35.6895, lng: 139.6917, name: "新宿駅", type: "スナック", cashless: false },
   { lat: 35.710063, lng: 139.8107, name: "浅草寺前", type: "飲料", cashless: true },
-];
+  { lat: 35.7013, lng: 139.9826, name: "船橋駅", type: "飲料", cashless: false },
+  { lat: 35.6146, lng: 140.1063, name: "千葉駅", type: "スナック", cashless: true },
+    ];
 
 // マーカー格納用
 let markers = [];
@@ -87,14 +89,6 @@ document.getElementById('searchBtn').addEventListener('click', () => {
   const selectedType = document.getElementById('typeSelect').value;
 
   let filtered = vendingMachines;
-
-  if (keyword) {
-    filtered = filtered.filter(vm => vm.name.includes(keyword));
-  }
-
-  if (selectedType) {
-    filtered = filtered.filter(vm => vm.type === selectedType);
-  }
 
   renderMarkers(filtered);
   document.getElementById('sidebar').classList.remove('show');
