@@ -93,8 +93,8 @@
     <button id="closeSidebar">×</button>
     <h2>検索オプション</h2>
     <input type="text" id="searchInput" placeholder="自販機名や地域で検索" />
-    <button id="searchBtn">検索</button>
-    <hr>
+    $1
+        <hr>
     <button class="search-option" data-filter="cashless" data-value="true">電子マネー対応</button>
     <button class="search-option" data-filter="cashless" data-value="false">電子マネー非対応</button>
     <button class="search-option" data-filter="type" data-value="飲料">飲料自販機</button>
@@ -137,10 +137,15 @@
     document.getElementById('locateMe').addEventListener('click', () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          map.setView([lat, lng], 15);
-          L.marker([lat, lng]).addTo(map).bindPopup("現在地").openPopup();
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      if (window.currentLocationMarker) {
+        map.removeLayer(window.currentLocationMarker);
+      }
+
+      map.setView([lat, lng], 15);
+          window.currentLocationMarker = L.marker([lat, lng])$1
         }, () => {
           alert("現在地の取得に失敗しました");
         });
@@ -188,11 +193,13 @@
       document.getElementById('sidebar').classList.remove('show');
     });
 
-    document.getElementById('searchInput').addEventListener('keypress', e => {
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         document.getElementById('searchBtn').click();
       }
     });
+
+    
   </script>
 </body>
 </html>
