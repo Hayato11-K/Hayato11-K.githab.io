@@ -137,15 +137,15 @@
     document.getElementById('locateMe').addEventListener('click', () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      if (window.currentLocationMarker) {
-        map.removeLayer(window.currentLocationMarker);
-      }
-
-      map.setView([lat, lng], 15);
-          window.currentLocationMarker = L.marker([lat, lng])$1
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 15);
+          L.marker([lat, lng], { icon: L.icon({
+        iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      }) }).addTo(map).bindPopup("現在地").openPopup();
         }, () => {
           alert("現在地の取得に失敗しました");
         });
