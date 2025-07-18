@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>自動販売機検索マップ</title>
+  <title>自動販売機 & 麗澤大学マップ検索</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -50,6 +50,7 @@
       box-shadow: 2px 0 5px rgba(0,0,0,0.3);
       z-index: 1000;
       transition: left 0.3s;
+      overflow-y: auto;
     }
     #sidebar.show {
       left: 0;
@@ -90,47 +91,82 @@
   <button id="locateMe">📍 現在地</button>
 
   <div id="sidebar">
-  <button id="closeSidebar">×</button>
-  <h2>検索オプション</h2>
-  <input type="text" id="searchInput" placeholder="自販機名や地域で検索" />
-  <button id="searchBtn">検索</button>
-  <hr>
-  <button class="search-option" data-filter="cashless" data-value="true">電子マネー対応</button>
-  <button class="search-option" data-filter="cashless" data-value="false">電子マネー非対応</button>
-  <button class="search-option" data-filter="type" data-value="飲料">飲料自販機</button>
-  <button class="search-option" data-filter="type" data-value="スナック">スナック自販機</button>
-</div>
+    <button id="closeSidebar">×</button>
+    <h2>検索オプション</h2>
+    <input type="text" id="searchInput" placeholder="自販機名や地域で検索" />
+    <button id="searchBtn">検索</button>
+    <hr>
+    <button class="search-option" data-filter="cashless" data-value="true">電子マネー対応</button>
+    <button class="search-option" data-filter="cashless" data-value="false">電子マネー非対応</button>
+    <button class="search-option" data-filter="type" data-value="飲料">飲料自販機</button>
+    <button class="search-option" data-filter="type" data-value="スナック">スナック自販機</button>
+    <hr>
+    <h3>麗澤大学マップ</h3>
+    <button onclick="focusOnBuilding('さつき棟')">さつき棟</button>
+    <button onclick="focusOnBuilding('かえで棟')">かえで棟</button>
+    <button onclick="focusOnBuilding('あすなろ棟')">あすなろ棟</button>
+    <button onclick="focusOnBuilding('ひいらぎ館')">ひいらぎ館</button>
+  </div>
 
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map', { zoomControl: false }).setView([35.681236, 139.767125], 13);
+  const map = L.map('map').setView([35.8335, 139.9555], 17);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    const vendingMachines = [
-      { lat: 35.681236, lng: 139.767125, name: "東京駅前", type: "飲料", cashless: true },
-      { lat: 35.6895, lng: 139.6917, name: "新宿駅", type: "スナック", cashless: false },
-      { lat: 35.710063, lng: 139.8107, name: "浅草寺前", type: "飲料", cashless: true },
-      { lat: 35.7013, lng: 139.9826, name: "船橋駅", type: "飲料", cashless: false },
-      { lat: 35.6146, lng: 140.1063, name: "千葉駅", type: "スナック", cashless: true },
-    ];
+  // 自動販売機データ（校舎ごとに複数台）
+  const vendingMachines = {
+    'さつき棟': [
+      { type: '飲料', eMoney: '対応' },
+      { type: '軽食・飲料', eMoney: '非対応' }
+    ],
+    'かえで棟': [
+      { type: '飲料', eMoney: '対応' }
+    ],
+    'あすなろ棟': [
+      { type: '飲料', eMoney: '対応' },
+      { type: 'スナック', eMoney: '対応' }
+    ],
+    'ひいらぎ館': [
+      { type: '飲料', eMoney: '非対応' }
+    ]
+  };
 
-    let markers = [];
+  // 校舎ごとにマーカー設置＋ポップアップで自販機情報表示
+  const buildings = {
+    'さつき棟': [35.8340902, 139.9560946],
+    'かえで棟': [35.8329853, 139.9552611],
+    'あすなろ棟': [35.8322353, 139.9558780],
+    'ひいらぎ館': [35.8342272, 139.9549993]
+  };
 
-    function renderMarkers(filteredList = vendingMachines) {
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
-      filteredList.forEach(vm => {
-        const marker = L.marker([vm.lat, vm.lng])
-          .addTo(map)
-          .bindPopup(`<b>${vm.name}</b><br>種類: ${vm.type}<br>電子マネー: ${vm.cashless ? "対応" : "非対応"}`);
-        markers.push(marker);
+  for (const [name, coords] of Object.entries(buildings)) {
+    const marker = L.marker(coords).addTo(map);
+
+    // 対応する自販機情報を整形
+    const machines = vendingMachines[name] || [];
+    let popupContent = `<strong>${name}</strong><br><br>`;
+
+    if (machines.length === 0) {
+      popupContent += '自動販売機情報なし';
+    } else {
+      machines.forEach(machine => {
+        popupContent += `
+          <div style="margin-bottom: 0.5rem;">
+            種類: ${machine.type}<br>
+            電子マネー: ${machine.eMoney}
+          </div>
+        `;
       });
     }
+
+    marker.bindPopup(popupContent);
+  }
+</script>
 
     renderMarkers();
 
@@ -139,13 +175,15 @@
         navigator.geolocation.getCurrentPosition(pos => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          map.setView([lat, lng], 15);
-          L.marker([lat, lng], { icon: L.icon({
-        iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32]
-      }) }).addTo(map).bindPopup("現在地").openPopup();
+          map.setView([lat, lng], 18);
+          L.marker([lat, lng], {
+            icon: L.icon({
+              iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+              popupAnchor: [0, -32]
+            })
+          }).addTo(map).bindPopup("現在地").openPopup();
         }, () => {
           alert("現在地の取得に失敗しました");
         });
@@ -157,6 +195,7 @@
     document.getElementById('menu').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('show');
     });
+
     document.getElementById('closeSidebar').addEventListener('click', () => {
       document.getElementById('sidebar').classList.remove('show');
     });
@@ -198,8 +237,6 @@
         document.getElementById('searchBtn').click();
       }
     });
-
-    
   </script>
 </body>
 </html>
