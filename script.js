@@ -1,62 +1,63 @@
-// 地図初期化（ズームコントロール非表示）
-const map = L.map('map', {
-  zoomControl: false // ← これで +− を非表示
-}).setView([35.681236, 139.767125], 13);
+// 地図初期化（ズームコントロール非表示） 
+<script>
+  const map = L.map('map').setView([35.8335, 139.9555], 17);
 
-// OSMタイル
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-// あとは以前の `script.js` と同じ内容（前回送信済みの完全版）でOK
+  // 自動販売機データ（校舎ごとに複数台）
+  const vendingMachines = {
+    'さつき棟': [
+      { type: '飲料', eMoney: '対応' },
+      { type: '軽食・飲料', eMoney: '非対応' }
+    ],
+    'かえで棟': [
+      { type: '飲料', eMoney: '対応' }
+    ],
+    'あすなろ棟': [
+      { type: '飲料', eMoney: '対応' },
+      { type: 'スナック', eMoney: '対応' }
+    ],
+    'ひいらぎ館': [
+      { type: '飲料', eMoney: '非対応' }
+    ]
+  };
 
-// 仮の自販機データ
-const vendingMachines = [
-  { lat: 35.681236, lng: 139.767125, name: "東京駅前", type: "飲料", cashless: true },
-  { lat: 35.6895, lng: 139.6917, name: "新宿駅", type: "スナック", cashless: false },
-  { lat: 35.710063, lng: 139.8107, name: "浅草寺前", type: "飲料", cashless: true },
-  { lat: 35.7013, lng: 139.9826, name: "船橋駅", type: "飲料", cashless: false },
-  { lat: 35.6146, lng: 140.1063, name: "千葉駅", type: "スナック", cashless: true },
-    ];
+  // 校舎ごとにマーカー設置＋ポップアップで自販機情報表示
+  const buildings = {
+    'さつき棟': [35.8340902, 139.9560946],
+    'かえで棟': [35.8329853, 139.9552611],
+    'あすなろ棟': [35.8322353, 139.9558780],
+    'ひいらぎ館': [35.8342272, 139.9549993]
+  };
 
-// マーカー格納用
-let markers = [];
+  for (const [name, coords] of Object.entries(buildings)) {
+    const marker = L.marker(coords).addTo(map);
 
-// マーカー表示処理
-function renderMarkers(filteredList = vendingMachines) {
-  // 古いマーカー削除
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+    // 対応する自販機情報を整形
+    const machines = vendingMachines[name] || [];
+    let popupContent = `<strong>${name}</strong><br><br>`;
 
-  // 新しいマーカー描画
-  filteredList.forEach(vm => {
-    const marker = L.marker([vm.lat, vm.lng])
-      .addTo(map)
-      .bindPopup(`<b>${vm.name}</b><br>種類: ${vm.type}<br>電子マネー: ${vm.cashless ? "対応" : "非対応"}`);
-    markers.push(marker);
-  });
-}
+    if (machines.length === 0) {
+      popupContent += '自動販売機情報なし';
+    } else {
+      machines.forEach(machine => {
+        popupContent += `
+          <div style="margin-bottom: 0.5rem;">
+            <strong>${machine.location}</strong><br>
+            種類: ${machine.type}<br>
+            電子マネー: ${machine.eMoney}
+          </div>
+        `;
+      });
+    }
 
-// 初期表示
-renderMarkers();
-
-// 現在地取得ボタン
-document.getElementById('locateMe').addEventListener('click', () => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      map.setView([lat, lng], 15);
-      L.marker([lat, lng]).addTo(map).bindPopup("現在地").openPopup();
-    }, () => {
-      alert("現在地の取得に失敗しました");
-    });
-  } else {
-    alert("このブラウザでは現在地取得がサポートされていません");
+    marker.bindPopup(popupContent);
   }
-});
+</script>
 
-// サイドバーの開閉
+// サイドバー開閉
 document.getElementById('menu').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('show');
 });
@@ -64,37 +65,48 @@ document.getElementById('closeSidebar').addEventListener('click', () => {
   document.getElementById('sidebar').classList.remove('show');
 });
 
-// サイドバーのボタン（電子マネー or 種類）フィルター（単独フィルター）
+// 電子マネー・種類フィルター
 document.querySelectorAll('.search-option').forEach(button => {
   button.addEventListener('click', () => {
     const filterType = button.dataset.filter;
     const filterValue = button.dataset.value;
 
-    let filtered = vendingMachines;
-
-    if (filterType === "cashless") {
-      filtered = vendingMachines.filter(vm => vm.cashless === (filterValue === "true"));
-    } else if (filterType === "type") {
-      filtered = vendingMachines.filter(vm => vm.type === filterValue);
-    }
+    const filtered = vendingMachines.map(b => ({
+      ...b,
+      machines: b.machines.filter(vm => {
+        if (filterType === "cashless") {
+          return vm.cashless === (filterValue === "true");
+        } else if (filterType === "type") {
+          return vm.type === filterValue;
+        }
+        return true;
+      })
+    })).filter(b => b.machines.length > 0);
 
     renderMarkers(filtered);
     document.getElementById('sidebar').classList.remove('show');
   });
 });
 
-// 🔍 入力検索＋種類のプルダウン検索
+// 入力検索＋種類
 document.getElementById('searchBtn').addEventListener('click', () => {
   const keyword = document.getElementById('searchInput').value.trim();
   const selectedType = document.getElementById('typeSelect').value;
 
-  let filtered = vendingMachines;
+  const filtered = vendingMachines.map(b => ({
+    ...b,
+    machines: b.machines.filter(vm => {
+      const matchKeyword = b.building.includes(keyword);
+      const matchType = selectedType === "" || vm.type === selectedType;
+      return matchKeyword && matchType;
+    })
+  })).filter(b => b.machines.length > 0);
 
   renderMarkers(filtered);
   document.getElementById('sidebar').classList.remove('show');
 });
 
-// 🔍 Enterキーでも検索実行
+// Enterキーでも検索実行
 document.getElementById('searchInput').addEventListener('keypress', e => {
   if (e.key === 'Enter') {
     document.getElementById('searchBtn').click();
